@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6B4423">
+    <title>Três Luas - Metas Compartilhadas</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #FEFDFB;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const COLORS = {
+            manteiga: '#F5E6D3',
+            chocolate: '#6B4423',
+            creme: '#FBF8F3',
+            amarelo: '#D4AF37',
+            dark: '#3D2817',
+            light: '#FEFDFB'
+        };
+
+        function TresLuas() {
+            const [authenticated, setAuthenticated] = useState(false);
+            const [user, setUser] = useState(null);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [isAdmin, setIsAdmin] = useState(false);
+            
+            const [metas, setMetas] = useState([]);
+            const [users, setUsers] = useState([]);
+            const [motivationalPhrase, setMotivationalPhrase] = useState('Juntas somos mais fortes');
+            const [editingPhrase, setEditingPhrase] = useState('');
+            const [view, setView] = useState('home');
+            const [comments, setComments] = useState([]);
+            const [newComment, setNewComment] = useState('');
+
+            const dailyGoals = [
+                { id: 'exercise', label: 'Exercício físico', emoji: '💪' },
+                { id: 'meditation', label: 'Meditação/Respiração', emoji: '🧘' },
+                { id: 'read', label: 'Ler', emoji: '📖' },
+                { id: 'duolingo', label: 'Duolingo', emoji: '🦉' },
+                { id: 'study', label: 'Estudar', emoji: '📚' },
+                { id: 'mantra', label: 'Mantra', emoji: '✨' }
+            ];
+
+            const weeklyGoals = [
+                { id: 'hobby', label: 'Praticar um hobbie', emoji: '🎨' }
+            ];
+
+            useEffect(() => {
+                const mockUsers = [
+                    { id: 'adamine', name: 'Adamine', email: 'adamine@example.com', isAdmin: true },
+                    { id: 'irma', name: 'Irmã', email: 'irma@example.com', isAdmin: false },
+                    { id: 'mae', name: 'Mãe', email: 'mae@example.com', isAdmin: false }
+                ];
+                setUsers(mockUsers);
+
+                const today = new Date().toISOString().split('T')[0];
+                const mockMetas = [
+                    { id: 1, userId: 'adamine', userName: 'Adamine', goalId: 'exercise', goalLabel: 'Exercício físico', completed: true, date: today, emoji: '💪' },
+                    { id: 2, userId: 'adamine', userName: 'Adamine', goalId: 'meditation', goalLabel: 'Meditação/Respiração', completed: true, date: today, emoji: '🧘' },
+                    { id: 3, userId: 'irma', userName: 'Irmã', goalId: 'exercise', goalLabel: 'Exercício físico', completed: false, date: today, emoji: '💪' },
+                    { id: 4, userId: 'irma', userName: 'Irmã', goalId: 'meditation', goalLabel: 'Meditação/Respiração', completed: true, date: today, emoji: '🧘' },
+                    { id: 5, userId: 'mae', userName: 'Mãe', goalId: 'exercise', goalLabel: 'Exercício físico', completed: true, date: today, emoji: '💪' }
+                ];
+                setMetas(mockMetas);
+
+                const mockComments = [
+                    { id: 1, userId: 'irma', userName: 'Irmã', text: 'Adamine, você é incrível! 💪', timestamp: new Date(Date.now() - 3600000).toISOString() },
+                    { id: 2, userId: 'mae', userName: 'Mãe', text: 'Que motivação! Vou fazer meu exercício agora', timestamp: new Date().toISOString() }
+                ];
+                setComments(mockComments);
+            }, []);
+
+            const login = async () => {
+                setLoading(true);
+                try {
+                    const foundUser = users.find(u => u.email === email);
+                    if (foundUser && password === 'senha123') {
+                        setUser(foundUser);
+                        setIsAdmin(foundUser.isAdmin);
+                        setAuthenticated(true);
+                        setView('home');
+                    } else {
+                        alert('Email ou senha inválidos');
+                    }
+                } catch (error) {
+                    alert('Erro ao fazer login');
+                }
+                setLoading(false);
+            };
+
+            const logout = () => {
+                setAuthenticated(false);
+                setUser(null);
+                setIsAdmin(false);
+                setEmail('');
+                setPassword('');
+            };
+
+            const toggleGoal = (goalId) => {
+                const today = new Date().toISOString().split('T')[0];
+                const existingGoal = metas.find(m => m.userId === user.id && m.goalId === goalId && m.date === today);
+
+                if (existingGoal) {
+                    setMetas(metas.map(m => m.id === existingGoal.id ? { ...m, completed: !m.completed } : m));
+                } else {
+                    const goalData = [...dailyGoals, ...weeklyGoals].find(g => g.id === goalId);
+                    const newMeta = {
+                        id: Date.now(),
+                        userId: user.id,
+                        userName: user.name,
+                        goalId,
+                        goalLabel: goalData.label,
+                        emoji: goalData.emoji,
+                        completed: true,
+                        date: today
+                    };
+                    setMetas([...metas, newMeta]);
+                }
+            };
+
+            const addComment = () => {
+                if (!newComment.trim()) return;
+                const comment = {
+                    id: Date.now(),
+                    userId: user.id,
+                    userName: user.name,
+                    text: newComment,
+                    timestamp: new Date().toISOString()
+                };
+                setComments([...comments, comment]);
+                setNewComment('');
+            };
+
+            const getWeeklyProgress = (userId) => {
+                const today = new Date();
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - today.getDay() + 1);
+                
+                const dailyCompleted = metas.filter(m => {
+                    const metaDate = new Date(m.date);
+                    return m.userId === userId && m.completed && metaDate >= weekStart && dailyGoals.some(g => g.id === m.goalId);
+                }).length;
+
+                const weeklyCompleted = metas.filter(m => {
+                    const metaDate = new Date(m.date);
+                    return m.userId === userId && m.completed && metaDate >= weekStart && weeklyGoals.some(g => g.id === m.goalId);
+                }).length;
+
+                return { dailyCompleted, weeklyCompleted };
+            };
+
+            if (!authenticated) {
+                return (
+                    <div style={{
+                        minHeight: '100vh',
+                        background: `linear-gradient(135deg, ${COLORS.creme} 0%, ${COLORS.manteiga} 100%)`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        padding: '20px',
+                        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                    }}>
+                        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                            <h1 style={{ fontSize: '32px', color: COLORS.chocolate, marginBottom: '10px', fontWeight: 300, letterSpacing: '2px' }}>
+                                TRÊS LUAS
+                            </h1>
+                            <p style={{ fontSize: '14px', color: COLORS.dark, opacity: 0.7 }}>
+                                juntas somos mais fortes
+                            </p>
+                        </div>
+
+                        <div style={{
+                            background: 'white',
+                            padding: '30px',
+                            borderRadius: '12px',
+                            boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+                            width: '100%',
+                            maxWidth: '400px'
+                        }}>
+                            <input
+                                type="email"
+                                placeholder="Email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    marginBottom: '15px',
+                                    border: `1px solid ${COLORS.manteiga}`,
+                                    borderRadius: '6px',
+                                    fontSize: '14px',
+                                    boxSizing: 'border-box'
+                                }}
+                            />
+                            <input
+                                type="password"
+                                placeholder="Senha"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && login()}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    marginBottom: '20px',
+                                    border: `1px solid ${COLORS.manteiga}`,
+                                    borderRadius: '6px',
+                                    fontSize: '14px',
+                                    boxSizing: 'border-box'
+                                }}
+                            />
+                            <button
+                                onClick={login}
+                                disabled={loading}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    background: COLORS.chocolate,
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    fontSize: '16px',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    opacity: loading ? 0.7 : 1
+                                }}
+                            >
+                                {loading ? 'Entrando...' : 'Entrar'}
+                            </button>
+
+                            <div style={{
+                                marginTop: '20px',
+                                padding: '15px',
+                                background: COLORS.creme,
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                color: COLORS.dark
+                            }}>
+                                <p><strong>Demo - Use para testar:</strong></p>
+                                <p>adamine@example.com | senha123</p>
+                                <p>irma@example.com | senha123</p>
+                                <p>mae@example.com | senha123</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (view === 'home') {
+                return (
+                    <div style={{ minHeight: '100vh', background: COLORS.light, paddingBottom: '80px' }}>
+                        <div style={{
+                            background: `linear-gradient(135deg, ${COLORS.chocolate} 0%, ${COLORS.dark} 100%)`,
+                            color: 'white',
+                            padding: '30px 20px',
+                            textAlign: 'center',
+                            borderBottomLeftRadius: '20px',
+                            borderBottomRightRadius: '20px'
+                        }}>
+                            <h1 style={{ fontSize: '24px', marginBottom: '5px', fontWeight: 300 }}>TRÊS LUAS</h1>
+                            <p style={{ fontSize: '12px', opacity: 0.8 }}>juntas somos mais fortes</p>
+                            <div style={{
+                                marginTop: '20px',
+                                fontSize: '16px',
+                                fontWeight: 300,
+                                fontStyle: 'italic',
+                                opacity: 0.9,
+                                color: COLORS.manteiga
+                            }}>
+                                "{motivationalPhrase}"
+                            </div>
+                        </div>
+
+                        <div style={{ padding: '20px' }}>
+                            <div style={{ marginBottom: '20px' }}>
+                                <h2 style={{
+                                    fontSize: '14px',
+                                    color: COLORS.chocolate,
+                                    marginBottom: '15px',
+                                    fontWeight: 500,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '1px'
+                                }}>
+                                    Progresso da Semana
+                                </h2>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                                    {users.map(u => {
+                                        const today = new Date();
+                                        const weekStart = new Date(today);
+                                        weekStart.setDate(today.getDate() - today.getDay() + 1);
+                                        const dailyCount = metas.filter(m => {
+                                            const metaDate = new Date(m.date);
+                                            return m.userId === u.id && m.completed && metaDate >= weekStart && dailyGoals.some(g => g.id === m.goalId);
+                                        }).length;
+
+                                        return (
+                                            <div key={u.id} style={{
+                                                background: 'white',
+                                                padding: '15px',
+                                                borderRadius: '10px',
+                                                textAlign: 'center',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                                                borderTop: `3px solid ${COLORS.amarelo}`
+                                            }}>
+                                                <div style={{ fontSize: '14px', color: COLORS.chocolate, fontWeight: 500, marginBottom: '8px' }}>
+                                                    {u.name}
+                                                </div>
+                                                <div style={{ fontSize: '18px', color: COLORS.chocolate, fontWeight: 600, marginBottom: '4px' }}>
+                                                    {dailyCount}/6
+                                                </div>
+                                                <div style={{ fontSize: '12px', color: COLORS.dark, opacity: 0.6 }}>
+                                                    metas diárias
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div style={{ marginTop: '30px' }}>
+                                <h2 style={{
+                                    fontSize: '14px',
+                                    color: COLORS.chocolate,
+                                    marginBottom: '15px',
+                                    fontWeight: 500,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '1px'
+                                }}>
+                                    Motivação
+                                </h2>
+                                <div style={{
+                                    background: 'white',
+                                    borderRadius: '10px',
+                                    padding: '15px',
+                                    marginBottom: '15px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                                }}>
+                                    {comments.map(comment => (
+                                        <div key={comment.id} style={{
+                                            marginBottom: '12px',
+                                            paddingBottom: '12px',
+                                            borderBottom: `1px solid ${COLORS.manteiga}`
+                                        }}>
+                                            <div style={{ fontSize: '12px', fontWeight: 600, color: COLORS.chocolate, marginBottom: '4px' }}>
+                                                {comment.userName}
+                                            </div>
+                                            <div style={{ fontSize: '13px', color: COLORS.dark, lineHeight: '1.4' }}>
+                                                {comment.text}
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Deixar comentário..."
+                                            value={newComment}
+                                            onChange={(e) => setNewComment(e.target.value)}
+                                            onKeyPress={(e) => e.key === 'Enter' && addComment()}
+                                            style={{
+                                                flex: 1,
+                                                padding: '10px',
+                                                border: `1px solid ${COLORS.manteiga}`,
+                                                borderRadius: '6px',
+                                                fontSize: '13px'
+                                            }}
+                                        />
+                                        <button
+                                            onClick={addComment}
+                                            style={{
+                                                padding: '10px 15px',
+                                                background: COLORS.amarelo,
+                                                color: COLORS.chocolate,
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontWeight: 500,
+                                                fontSize: '12px'
+                                            }}
+                                        >
+                                            ✓
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{
+                            position: 'fixed',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            background: 'white',
+                            borderTop: `1px solid ${COLORS.manteiga}`,
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1fr 1fr',
+                            gap: '0'
+                        }}>
+                            {[
+                                { id: 'home', label: 'Home', emoji: '🏠' },
+                                { id: 'metas', label: 'Metas', emoji: '✓' },
+                                { id: 'dashboard', label: 'Dashboard', emoji: '📊' },
+                                ...(isAdmin ? [{ id: 'admin', label: 'Admin', emoji: '⚙️' }] : [])
+                            ].map(nav => (
+                                <button key={nav.id}
+                                    onClick={() => setView(nav.id)}
+                                    style={{
+                                        background: view === nav.id ? COLORS.manteiga : 'transparent',
+                                        border: 'none',
+                                        padding: '12px',
+                                        cursor: 'pointer',
+                                        fontSize: '12px',
+                                        color: view === nav.id ? COLORS.chocolate : COLORS.dark,
+                                        fontWeight: view === nav.id ? 600 : 400,
+                                        borderRadius: '0',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}
+                                >
+                                    <span style={{ fontSize: '16px' }}>{nav.emoji}</span>
+                                    {nav.label}
+                                </button>
+                            ))}
+                            <button
+                                onClick={logout}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    padding: '12px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    color: COLORS.dark,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                }}
+                            >
+                                <span style={{ fontSize: '16px' }}>👋</span>
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (view === 'metas') {
+                const today = new Date().toISOString().split('T')[0];
+                const todayMetas = metas.filter(m => m.userId === user.id && m.date === today);
+
+                return (
+                    <div style={{ minHeight: '100vh', background: COLORS.light, paddingBottom: '100px' }}>
+                        <div style={{ background: COLORS.chocolate, color: 'white', padding: '20px', textAlign: 'center' }}>
+                            <h1 style={{ fontSize: '20px', marginBottom: '5px' }}>Metas de Hoje</h1>
+                            <p style={{ fontSize: '12px', opacity: 0.8 }}>
+                                {todayMetas.filter(m => m.completed).length}/{6 + 1}
+                            </p>
+                        </div>
+
+                        <div style={{ padding: '20px' }}>
+                            <div style={{ marginBottom: '25px' }}>
+                                <h2 style={{ fontSize: '13px', color: COLORS.chocolate, marginBottom: '15px', textTransform: 'uppercase', fontWeight: 600 }}>Diárias</h2>
+                                {dailyGoals.map(goal => {
+                                    const goalMeta = todayMetas.find(m => m.goalId === goal.id);
+                                    const isCompleted = goalMeta?.completed || false;
+
+                                    return (
+                                        <div key={goal.id} onClick={() => toggleGoal(goal.id)} style={{
+                                            background: 'white',
+                                            padding: '15px',
+                                            marginBottom: '10px',
+                                            borderRadius: '10px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                                            borderLeft: `4px solid ${isCompleted ? COLORS.amarelo : COLORS.manteiga}`,
+                                            opacity: isCompleted ? 0.6 : 1
+                                        }}>
+                                            <div style={{ fontSize: '20px' }}>{goal.emoji}</div>
+                                            <div style={{
+                                                flex: 1,
+                                                fontSize: '14px',
+                                                color: COLORS.chocolate,
+                                                textDecoration: isCompleted ? 'line-through' : 'none'
+                                            }}>
+                                                {goal.label}
+                                            </div>
+                                            <div style={{
+                                                width: '20px',
+                                                height: '20px',
+                                                border: `2px solid ${COLORS.chocolate}`,
+                                                borderRadius: '4px',
+                                                background: isCompleted ? COLORS.amarelo : 'transparent',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: COLORS.chocolate,
+                                                fontSize: '12px',
+                                                fontWeight: 'bold'
+                                            }}>
+                                                {isCompleted && '✓'}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div>
+                                <h2 style={{ fontSize: '13px', color: COLORS.chocolate, marginBottom: '15px', textTransform: 'uppercase', fontWeight: 600 }}>Semanal</h2>
+                                {weeklyGoals.map(goal => {
+                                    const goalMeta = todayMetas.find(m => m.goalId === goal.id);
+                                    const isCompleted = goalMeta?.completed || false;
+
+                                    return (
+                                        <div key={goal.id} onClick={() => toggleGoal(goal.id)} style={{
+                                            background: 'white',
+                                            padding: '15px',
+                                            marginBottom: '10px',
+                                            borderRadius: '10px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                                            borderLeft: `4px solid ${isCompleted ? COLORS.amarelo : COLORS.manteiga}`,
+                                            opacity: isCompleted ? 0.6 : 1
+                                        }}>
+                                            <div style={{ fontSize: '20px' }}>{goal.emoji}</div>
+                                            <div style={{
+                                                flex: 1,
+                                                fontSize: '14px',
+                                                color: COLORS.chocolate,
+                                                textDecoration: isCompleted ? 'line-through' : 'none'
+                                            }}>
+                                                {goal.label}
+                                            </div>
+                                            <div style={{
+                                                width: '20px',
+                                                height: '20px',
+                                                border: `2px solid ${COLORS.chocolate}`,
+                                                borderRadius: '4px',
+                                                background: isCompleted ? COLORS.amarelo : 'transparent',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: COLORS.chocolate,
+                                                fontSize: '12px',
+                                                fontWeight: 'bold'
+                                            }}>
+                                                {isCompleted && '✓'}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div style={{
+                            position: 'fixed',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            background: 'white',
+                            borderTop: `1px solid ${COLORS.manteiga}`,
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1fr 1fr'
+                        }}>
+                            {[
+                                { id: 'home', label: 'Home', emoji: '🏠' },
+                                { id: 'metas', label: 'Metas', emoji: '✓' },
+                                { id: 'dashboard', label: 'Dashboard', emoji: '📊' },
+                                ...(isAdmin ? [{ id: 'admin', label: 'Admin', emoji: '⚙️' }] : [])
+                            ].map(nav => (
+                                <button key={nav.id}
+                                    onClick={() => setView(nav.id)}
+                                    style={{
+                                        background: view === nav.id ? COLORS.manteiga : 'transparent',
+                                        border: 'none',
+                                        padding: '12px',
+                                        cursor: 'pointer',
+                                        fontSize: '12px',
+                                        color: view === nav.id ? COLORS.chocolate : COLORS.dark,
+                                        fontWeight: view === nav.id ? 600 : 400,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}
+                                >
+                                    <span style={{ fontSize: '16px' }}>{nav.emoji}</span>
+                                    {nav.label}
+                                </button>
+                            ))}
+                            <button
+                                onClick={logout}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    padding: '12px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    color: COLORS.dark,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                }}
+                            >
+                                <span style={{ fontSize: '16px' }}>👋</span>
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (view === 'dashboard') {
+                const today = new Date();
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - today.getDay() + 1);
+
+                return (
+                    <div style={{ minHeight: '100vh', background: COLORS.light, paddingBottom: '100px' }}>
+                        <div style={{ background: COLORS.chocolate, color: 'white', padding: '20px', textAlign: 'center' }}>
+                            <h1 style={{ fontSize: '20px', marginBottom: '5px' }}>Dashboard</h1>
+                            <p style={{ fontSize: '12px', opacity: 0.8 }}>Semana de {weekStart.toLocaleDateString('pt-BR')}</p>
+                        </div>
+
+                        <div style={{ padding: '20px' }}>
+                            {users.map(u => {
+                                const weekMetas = metas.filter(m => {
+                                    const metaDate = new Date(m.date);
+                                    return m.userId === u.id && metaDate >= weekStart;
+                                });
+                                const completedDaily = weekMetas.filter(m => m.completed && dailyGoals.some(g => g.id === m.goalId)).length;
+                                const completedWeekly = weekMetas.filter(m => m.completed && weeklyGoals.some(g => g.id === m.goalId)).length;
+
+                                return (
+                                    <div key={u.id} style={{
+                                        background: 'white',
+                                        borderRadius: '12px',
+                                        padding: '20px',
+                                        marginBottom: '15px',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                                        borderTop: `4px solid ${COLORS.amarelo}`
+                                    }}>
+                                        <div style={{ fontSize: '16px', fontWeight: 600, color: COLORS.chocolate, marginBottom: '15px' }}>
+                                            {u.name}
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                            <div style={{ background: COLORS.manteiga, padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '20px', fontWeight: 700, color: COLORS.chocolate, marginBottom: '4px' }}>
+                                                    {completedDaily}
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: COLORS.dark, opacity: 0.7 }}>
+                                                    Metas diárias
+                                                </div>
+                                            </div>
+
+                                            <div style={{ background: COLORS.creme, padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '20px', fontWeight: 700, color: COLORS.chocolate, marginBottom: '4px' }}>
+                                                    {completedWeekly}
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: COLORS.dark, opacity: 0.7 }}>
+                                                    Semanais
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div style={{
+                            position: 'fixed',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            background: 'white',
+                            borderTop: `1px solid ${COLORS.manteiga}`,
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1fr 1fr'
+                        }}>
+                            {[
+                                { id: 'home', label: 'Home', emoji: '🏠' },
+                                { id: 'metas', label: 'Metas', emoji: '✓' },
+                                { id: 'dashboard', label: 'Dashboard', emoji: '📊' },
+                                ...(isAdmin ? [{ id: 'admin', label: 'Admin', emoji: '⚙️' }] : [])
+                            ].map(nav => (
+                                <button key={nav.id}
+                                    onClick={() => setView(nav.id)}
+                                    style={{
+                                        background: view === nav.id ? COLORS.manteiga : 'transparent',
+                                        border: 'none',
+                                        padding: '12px',
+                                        cursor: 'pointer',
+                                        fontSize: '12px',
+                                        color: view === nav.id ? COLORS.chocolate : COLORS.dark,
+                                        fontWeight: view === nav.id ? 600 : 400,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}
+                                >
+                                    <span style={{ fontSize: '16px' }}>{nav.emoji}</span>
+                                    {nav.label}
+                                </button>
+                            ))}
+                            <button
+                                onClick={logout}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    padding: '12px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    color: COLORS.dark,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                }}
+                            >
+                                <span style={{ fontSize: '16px' }}>👋</span>
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (view === 'admin') {
+                return (
+                    <div style={{ minHeight: '100vh', background: COLORS.light, paddingBottom: '100px' }}>
+                        <div style={{ background: COLORS.chocolate, color: 'white', padding: '20px', textAlign: 'center' }}>
+                            <h1 style={{ fontSize: '20px' }}>Painel Admin</h1>
+                        </div>
+
+                        <div style={{ padding: '20px' }}>
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '20px',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '14px',
+                                    color: COLORS.chocolate,
+                                    marginBottom: '15px',
+                                    fontWeight: 600
+                                }}>
+                                    Frase Motivacional da Semana
+                                </h2>
+                                <textarea
+                                    value={editingPhrase || motivationalPhrase}
+                                    onChange={(e) => setEditingPhrase(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        border: `1px solid ${COLORS.manteiga}`,
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        fontFamily: 'inherit',
+                                        minHeight: '80px',
+                                        marginBottom: '15px',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
+                                <button
+                                    onClick={() => {
+                                        setMotivationalPhrase(editingPhrase || motivationalPhrase);
+                                        setEditingPhrase('');
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        background: COLORS.amarelo,
+                                        color: COLORS.chocolate,
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontWeight: 600,
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Salvar Frase
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style={{
+                            position: 'fixed',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            background: 'white',
+                            borderTop: `1px solid ${COLORS.manteiga}`,
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1fr 1fr'
+                        }}>
+                            {[
+                                { id: 'home', label: 'Home', emoji: '🏠' },
+                                { id: 'metas', label: 'Metas', emoji: '✓' },
+                                { id: 'dashboard', label: 'Dashboard', emoji: '📊' },
+                                { id: 'admin', label: 'Admin', emoji: '⚙️' }
+                            ].map(nav => (
+                                <button key={nav.id}
+                                    onClick={() => setView(nav.id)}
+                                    style={{
+                                        background: view === nav.id ? COLORS.manteiga : 'transparent',
+                                        border: 'none',
+                                        padding: '12px',
+                                        cursor: 'pointer',
+                                        fontSize: '12px',
+                                        color: view === nav.id ? COLORS.chocolate : COLORS.dark,
+                                        fontWeight: view === nav.id ? 600 : 400,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}
+                                >
+                                    <span style={{ fontSize: '16px' }}>{nav.emoji}</span>
+                                    {nav.label}
+                                </button>
+                            ))}
+                            <button
+                                onClick={logout}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    padding: '12px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    color: COLORS.dark,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                }}
+                            >
+                                <span style={{ fontSize: '16px' }}>👋</span>
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TresLuas />);
+    </script>
+</body>
+</html>
